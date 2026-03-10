@@ -146,10 +146,10 @@ WHERE email='cdc.updated@example.com';
 ## Data preparation
 ```bash
 # S3 Connector
-export AWS_ACCESS_KEY_ID=your-access-key
-export AWS_SECRET_ACCESS_KEY=your-secret-key
-export AWS_REGION=us-west-2  # Change to your region
-export S3_BUCKET_NAME=your-bucket-name  # You'll reference this in the config
+export AWS_ACCESS_KEY_ID=
+export AWS_SECRET_ACCESS_KEY=
+export AWS_REGION=
+export S3_BUCKET_NAME=
 
 curl -i -X POST \
   -H "Accept: application/json" \
@@ -200,6 +200,23 @@ aws s3 ls $S3_BUCKET_NAME/event_streaming/postgres1.inventory.customers/year=202
 ```
 
 ## DBT preparation
+```bash
+uv venv --python 3.12 && source .venv/bin/activate
+uv pip install -r requirements.txt
+
+dbt init dbx_warehouse
+cd dbx_warehouse/
+
+export DBT_CATALOG=
+export DBT_HOST=
+export DBT_HTTP_PATH=
+export DBT_SCHEMA=
+export DBT_TOKEN=
+
+# materialize tables and views
+dbt run --profiles-dir ./
+
+```
 
 ## Airflow integration
 
