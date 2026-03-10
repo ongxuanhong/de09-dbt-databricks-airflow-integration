@@ -10,6 +10,100 @@
 - CI/CD when changes
 
 ## Services preparation
+```bash
+docker compose up -d
+
+# Check services
+docker compose ps
+
+# check postgres
+docker compose exec postgres psql -U postgres -c "SELECT * FROM inventory.customers;"
+
+# check kafka topics
+docker compose exec kafka kafka-topics --bootstrap-server kafka:9092 --list
+
+# See all groups
+docker compose exec kafka kafka-consumer-groups --bootstrap-server kafka:9092 --list
+
+# Describe one group (optional – see if active members / offsets exist)
+docker compose exec kafka kafka-consumer-groups --bootstrap-server kafka:9092 --describe --group console-consumer-15706
+
+# Delete
+docker compose exec kafka kafka-consumer-groups --bootstrap-server kafka:9092 --delete --group console-consumer-15706
+
+# Create connector for PostgreSQL debezium_demo database
+curl -i -X POST \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  http://localhost:8083/connectors \
+  -d '{
+    "name": "debezium-demo-connector",
+    "config": {
+      "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+      "tasks.max": "1",
+      "database.hostname": "postgres",
+      "database.port": "5432",
+      "database.user": "postgres",
+      "database.password": "postgres",
+      "database.dbname": "postgres",
+
+      "topic.prefix": "postgres1",
+
+      "plugin.name": "pgoutput",
+      "slot.name": "debezium_demo_slot",
+      "publication.name": "debezium_demo_pub",
+      "publication.autocreate.mode": "filtered",
+
+      "schema.include.list": "inventory",
+      "table.include.list": "inventory.customers,inventory.orders",
+      "snapshot.mode": "initial",
+
+      "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "key.converter.schemas.enable": "false",
+      "value.converter.schemas.enable": "false"
+    }
+  }'
+
+# Check connectors
+curl -XGET http://localhost:8083/connectors
+
+# Retrieves additional state information for each connector and its tasks
+curl -XGET http://localhost:8083/connectors?expand=status | jq
+
+# Returns metadata for each connector (config, tasks, type)
+curl -XGET http://localhost:8083/connectors?expand=info | jq
+
+# delete
+curl -i -X DELETE http://localhost:8083/connectors/debezium-demo-connector
+
+
+# inspecting
+curl -s http://localhost:8083/connectors/debezium-demo-connector/status | jq
+curl -s http://localhost:8083/connectors/debezium-demo-connector | jq '.config'  
+
+# Observing CDC with CRUD
+docker exec kafka kafka-console-consumer --bootstrap-server kafka:9092 --topic postgres1.inventory.customers --from-beginning | jq
+
+# Create
+docker exec postgres psql -U postgres -d postgres -c "
+INSERT INTO inventory.customers(first_name,last_name,email)
+VALUES ('CDC','Create','cdc.create@example.com');
+"
+
+# Update
+docker exec postgres psql -U postgres -d postgres -c "
+UPDATE inventory.customers
+SET first_name='CDC-Updated', email='cdc.updated@example.com'
+WHERE email='cdc.create@example.com';
+"
+
+# Delete
+docker exec postgres psql -U postgres -d postgres -c "
+DELETE FROM inventory.customers
+WHERE email='cdc.updated@example.com';
+"
+```
 
 ## Data preparation
 

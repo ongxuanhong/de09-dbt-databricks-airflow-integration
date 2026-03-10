@@ -1,0 +1,33 @@
+services:
+
+  postgres:
+    image: debezium/example-postgres:2.7.3.Final
+    container_name: postgres
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env.docker
+
+  debezium:
+    image: debezium/connect:3.0.0.Final
+    container_name: debezium
+    ports:
+      - "8083:8083"
+    env_file:
+      - .env.docker
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+    env_file:
+      - .env.docker
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5 
