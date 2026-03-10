@@ -175,6 +175,7 @@ curl -i -X POST \
       "timezone": "UTC",
 
       "schema.compatibility": "NONE",
+      "topics.dir": "event_streaming",
 
       "key.converter": "io.confluent.connect.avro.AvroConverter",
       "value.converter": "io.confluent.connect.avro.AvroConverter",
@@ -183,15 +184,19 @@ curl -i -X POST \
 
       "storage.class": "io.confluent.connect.s3.storage.S3Storage",
       "flush.size": "1",
-      "rotate.schedule.interval.ms": "3600000"
+      "rotate.schedule.interval.ms": "3600000",
+      "consumer.override.auto.offset.reset": "earliest"
     }
   }'
 
 # delete
 curl -X DELETE http://localhost:8083/connectors/s3-sink-connector  
+docker compose exec kafka kafka-consumer-groups --bootstrap-server kafka:9092 --list | grep connect
+docker compose exec kafka kafka-consumer-groups --bootstrap-server kafka:9092 --delete --group connect-s3-sink-connector
 
 # check
 aws s3 ls $S3_BUCKET_NAME/topics/postgres1.inventory.customers/year=2026/month=03/day=10/
+aws s3 ls $S3_BUCKET_NAME/event_streaming/postgres1.inventory.customers/year=2026/month=03/day=10/
 ```
 
 ## DBT preparation
