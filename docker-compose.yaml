@@ -10,6 +10,24 @@ services:
     env_file:
       - .env.docker
 
+  schema-registry:
+    image: confluentinc/cp-schema-registry:latest
+    hostname: schema-registry
+    container_name: schema-registry
+    ports:
+      - "8082:8082"
+    depends_on:
+      - kafka
+    networks:
+      - default
+    env_file:
+      - .env.docker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/subjects"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   debezium:
     image: debezium/connect:3.0.0.Final
     container_name: debezium
@@ -17,6 +35,11 @@ services:
       - "8083:8083"
     env_file:
       - .env.docker
+    depends_on:
+      - schema-registry
+    volumes:
+      - ./avro-converter:/kafka/connect/avro-converter
+      - ./s3-connector:/kafka/connect/s3-connector
 
   kafka:
     image: confluentinc/cp-kafka:latest

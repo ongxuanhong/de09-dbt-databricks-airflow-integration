@@ -11,6 +11,9 @@
 
 ## Services preparation
 ```bash
+chmod +x ./download_connects.sh
+./download_connects.sh
+
 docker compose up -d
 
 # Check services
@@ -32,6 +35,7 @@ docker compose exec kafka kafka-consumer-groups --bootstrap-server kafka:9092 --
 docker compose exec kafka kafka-consumer-groups --bootstrap-server kafka:9092 --delete --group console-consumer-15706
 
 # Create connector for PostgreSQL debezium_demo database
+# JSON
 curl -i -X POST \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
@@ -64,6 +68,40 @@ curl -i -X POST \
       "value.converter.schemas.enable": "false"
     }
   }'
+
+# Avro
+curl -i -X POST \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  http://localhost:8083/connectors \
+  -d '{
+    "name": "debezium-demo-connector",
+    "config": {
+      "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+      "tasks.max": "1",
+      "database.hostname": "postgres",
+      "database.port": "5432",
+      "database.user": "postgres",
+      "database.password": "postgres",
+      "database.dbname": "postgres",
+
+      "topic.prefix": "postgres1",
+
+      "plugin.name": "pgoutput",
+      "slot.name": "debezium_demo_slot",
+      "publication.name": "debezium_demo_pub",
+      "publication.autocreate.mode": "filtered",
+
+      "schema.include.list": "inventory",
+      "table.include.list": "inventory.customers,inventory.orders",
+      "snapshot.mode": "initial",
+
+      "key.converter": "io.confluent.connect.avro.AvroConverter",
+      "value.converter": "io.confluent.connect.avro.AvroConverter",
+      "key.converter.schema.registry.url": "http://schema-registry:8082",
+      "value.converter.schema.registry.url": "http://schema-registry:8082"
+    }
+  }'  
 
 # Check connectors
 curl -XGET http://localhost:8083/connectors
@@ -106,6 +144,55 @@ WHERE email='cdc.updated@example.com';
 ```
 
 ## Data preparation
+```bash
+# S3 Connector
+export AWS_ACCESS_KEY_ID=your-access-key
+export AWS_SECRET_ACCESS_KEY=your-secret-key
+export AWS_REGION=us-west-2  # Change to your region
+export S3_BUCKET_NAME=your-bucket-name  # You'll reference this in the config
+
+curl -i -X POST \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  http://localhost:8083/connectors \
+  -d '{
+    "name": "s3-sink-connector",
+    "config": {
+      "connector.class": "io.confluent.connect.s3.S3SinkConnector",
+      "tasks.max": "1",
+      "topics.regex": "postgres1\\..*",
+
+      "s3.region": "${AWS_REGION}",
+      "s3.bucket.name": "${S3_BUCKET_NAME}",
+      "aws.access.key.id": "${AWS_ACCESS_KEY_ID}",
+      "aws.secret.access.key": "${AWS_SECRET_ACCESS_KEY}",
+
+      "format.class": "io.confluent.connect.s3.format.avro.AvroFormat",
+      "partitioner.class": "io.confluent.connect.storage.partitioner.DailyPartitioner",
+      "path.format": "'year'=YYYY/'month'=MM/'day'=dd",
+      "partition.duration.ms": "86400000",
+      "locale": "en-US",
+      "timezone": "UTC",
+
+      "schema.compatibility": "NONE",
+
+      "key.converter": "io.confluent.connect.avro.AvroConverter",
+      "value.converter": "io.confluent.connect.avro.AvroConverter",
+      "key.converter.schema.registry.url": "http://schema-registry:8082",
+      "value.converter.schema.registry.url": "http://schema-registry:8082",
+
+      "storage.class": "io.confluent.connect.s3.storage.S3Storage",
+      "flush.size": "1",
+      "rotate.schedule.interval.ms": "3600000"
+    }
+  }'
+
+# delete
+curl -X DELETE http://localhost:8083/connectors/s3-sink-connector  
+
+# check
+aws s3 ls $S3_BUCKET_NAME/topics/postgres1.inventory.customers/year=2026/month=03/day=10/
+```
 
 ## DBT preparation
 
