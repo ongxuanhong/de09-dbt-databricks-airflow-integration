@@ -219,5 +219,10 @@ dbt run --profiles-dir ./
 ```
 
 ## Airflow integration
+```bash
+cd airflow_project
+docker compose build
+docker compose up -d
+```
 
 ## CI/CD integration

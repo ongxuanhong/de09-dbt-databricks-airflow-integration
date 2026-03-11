@@ -1,0 +1,29 @@
+# Core Airflow
+apache-airflow[amazon]
+apache-airflow-core
+apache-airflow-providers-amazon
+apache-airflow-providers-apache-kafka[common.messaging]
+apache-airflow-providers-common-compat
+apache-airflow-providers-common-io
+apache-airflow-providers-common-messaging
+apache-airflow-providers-common-sql[openlineage]
+apache-airflow-providers-http
+apache-airflow-providers-openlineage
+apache-airflow-providers-postgres[amazon]
+apache-airflow-providers-redis
+apache-airflow-providers-smtp
+apache-airflow-providers-standard
+apache-airflow-providers-slack
+
+apache-airflow-task-sdk
+# Data Processing
+pandas
+numpy
+
+# Job Creation Service
+requests
+pyarrow
+
+# AWS dependencies
+boto3
+botocore
