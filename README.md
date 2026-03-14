@@ -146,11 +146,12 @@ WHERE email='cdc.updated@example.com';
 ## Data preparation
 ```bash
 # S3 Connector
-export AWS_ACCESS_KEY_ID=
-export AWS_SECRET_ACCESS_KEY=
-export AWS_REGION=
-export S3_BUCKET_NAME=
+export AWS_ACCESS_KEY_ID=minioadmin
+export AWS_SECRET_ACCESS_KEY=minioadmin
+export AWS_REGION=us-west-2
+export S3_BUCKET_NAME=bronze
 
+# Avro topic to Avro file in S3
 curl -i -X POST \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
@@ -181,6 +182,46 @@ curl -i -X POST \
       "value.converter": "io.confluent.connect.avro.AvroConverter",
       "key.converter.schema.registry.url": "http://schema-registry:8082",
       "value.converter.schema.registry.url": "http://schema-registry:8082",
+
+      "storage.class": "io.confluent.connect.s3.storage.S3Storage",
+      "flush.size": "1",
+      "rotate.schedule.interval.ms": "3600000",
+      "consumer.override.auto.offset.reset": "earliest"
+    }
+  }'
+
+# JSON topic to Avro file in S3  
+curl -i -X POST \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  http://localhost:8083/connectors \
+  -d '{
+    "name": "s3-sink-connector",
+    "config": {
+      "connector.class": "io.confluent.connect.s3.S3SinkConnector",
+      "tasks.max": "1",
+      "topics.regex": "postgres1\\..*",
+
+      "store.url": "http://minio:9000",
+      "s3.region": "us-west-2",
+      "s3.bucket.name": "bronze",
+      "aws.access.key.id": "minioadmin",
+      "aws.secret.access.key": "minioadmin",
+
+      "format.class": "io.confluent.connect.s3.format.avro.AvroFormat",
+      "partitioner.class": "io.confluent.connect.storage.partitioner.DailyPartitioner",
+      "path.format": "'year'=YYYY/'month'=MM/'day'=dd",
+      "partition.duration.ms": "86400000",
+      "locale": "en-US",
+      "timezone": "UTC",
+
+      "schema.compatibility": "NONE",
+      "topics.dir": "event_streaming",
+
+      "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "key.converter.schemas.enable": "false",
+      "value.converter.schemas.enable": "false",
 
       "storage.class": "io.confluent.connect.s3.storage.S3Storage",
       "flush.size": "1",
