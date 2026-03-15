@@ -210,3 +210,5 @@ avro-converter/
 s3-connector/
 .user.yml
 logs/
+.idea/
+state/

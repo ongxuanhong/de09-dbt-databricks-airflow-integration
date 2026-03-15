@@ -16,7 +16,7 @@ Docs:
 import os
 from typing import Any
 
-from quixstreams import Application
+from quixstreams import Application, State
 from quixstreams.kafka.configuration import ConnectionConfig
 
 from delta_sink import DeltaSink
@@ -30,7 +30,10 @@ def _create_connection_config() -> ConnectionConfig | None:
 
 def _key_setter(record: dict) -> str:
     """Kafka key from record. Quix FileSink writes _key."""
-    key = record.get("_key")
+    after = record.get("after")
+    if after is None:
+        return ""
+    key = record["after"].get("id")
     if key is None:
         return ""
     return key if isinstance(key, str) else str(key)
@@ -43,7 +46,7 @@ def _value_setter(record: dict) -> dict[str, Any]:
 
 def _timestamp_setter(record: dict) -> int:
     """Kafka timestamp (ms). Quix FileSink writes _timestamp in ms."""
-    ts = record.get("_timestamp")
+    ts = record.get("ts_ms")
     if ts is None:
         return 0
     try:
@@ -51,6 +54,19 @@ def _timestamp_setter(record: dict) -> int:
     except (TypeError, ValueError):
         return 0
 
+
+def get_latest_timestamps(record: dict, state: State) -> bool:
+    """Keep only the latest record per key based on _timestamp."""
+    key = "latest_timestamp"
+    timestamp = _timestamp_setter(record)
+    latest_timestamp = state.get(key, default=0)
+    if timestamp > latest_timestamp:
+        try:
+            state.set(key, timestamp)
+        except Exception as err:
+            print(err)
+        return True
+    return False
 
 def main() -> None:
     bucket = os.getenv("S3_SOURCE_BUCKET", "bronze")
@@ -99,6 +115,7 @@ def main() -> None:
         auto_offset_reset="latest",
     )
     sdf = app.dataframe(source=source)
+    sdf = sdf.filter(get_latest_timestamps, stateful=True)
     if os.getenv("STREAM_PRINT", "false").lower() in ("1", "true", "yes"):
         sdf.print(metadata=True)
     sdf.sink(DeltaSink(table_uri=delta_table_uri))
