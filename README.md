@@ -231,6 +231,47 @@ curl -i -X POST \
     }
   }'
 
+# JSON topic to JSON file in S3  
+curl -i -X POST \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  http://localhost:8083/connectors \
+  -d '{
+    "name": "s3-sink-connector",
+    "config": {
+      "connector.class": "io.confluent.connect.s3.S3SinkConnector",
+      "tasks.max": "1",
+      "topics.regex": "postgres1\\..*",
+
+      "store.url": "http://minio:9000",
+      "s3.region": "us-west-2",
+      "s3.bucket.name": "bronze",
+      "aws.access.key.id": "minioadmin",
+      "aws.secret.access.key": "minioadmin",
+
+      "format.class": "io.confluent.connect.s3.format.json.JsonFormat",
+      "partitioner.class": "io.confluent.connect.storage.partitioner.DailyPartitioner",
+      "path.format": "'year'=YYYY/'month'=MM/'day'=dd",
+      "partition.duration.ms": "86400000",
+      "locale": "en-US",
+      "timezone": "UTC",
+      "behavior.on.null.values": "ignore",
+
+      "schema.compatibility": "NONE",
+      "topics.dir": "event_streaming",
+
+      "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "key.converter.schemas.enable": "false",
+      "value.converter.schemas.enable": "false",
+
+      "storage.class": "io.confluent.connect.s3.storage.S3Storage",
+      "flush.size": "1",
+      "rotate.schedule.interval.ms": "3600000",
+      "consumer.override.auto.offset.reset": "earliest"
+    }
+  }'
+
 # delete
 curl -X DELETE http://localhost:8083/connectors/s3-sink-connector  
 docker compose exec kafka kafka-consumer-groups --bootstrap-server kafka:9092 --list | grep connect
