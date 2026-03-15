@@ -1,0 +1,8 @@
+quixstreams==3.23.2
+quixstreams[s3]
+python-dotenv==1.2.1
+numpy==2.4.3
+pandas==3.0.1
+fastavro==1.12.1
+pyarrow==23.0.1
+deltalake==1.4.2

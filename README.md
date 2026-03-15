@@ -184,7 +184,7 @@ curl -i -X POST \
       "value.converter.schema.registry.url": "http://schema-registry:8082",
 
       "storage.class": "io.confluent.connect.s3.storage.S3Storage",
-      "flush.size": "1",
+      "flush.size": "4",
       "rotate.schedule.interval.ms": "3600000",
       "consumer.override.auto.offset.reset": "earliest"
     }
@@ -214,6 +214,7 @@ curl -i -X POST \
       "partition.duration.ms": "86400000",
       "locale": "en-US",
       "timezone": "UTC",
+      "behavior.on.null.values": "ignore",
 
       "schema.compatibility": "NONE",
       "topics.dir": "event_streaming",
@@ -224,7 +225,7 @@ curl -i -X POST \
       "value.converter.schemas.enable": "false",
 
       "storage.class": "io.confluent.connect.s3.storage.S3Storage",
-      "flush.size": "1",
+      "flush.size": "4",
       "rotate.schedule.interval.ms": "3600000",
       "consumer.override.auto.offset.reset": "earliest"
     }
