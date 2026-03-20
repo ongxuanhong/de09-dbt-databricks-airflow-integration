@@ -290,9 +290,9 @@ curl -i -X POST \
       "aws.access.key.id": "minioadmin",
       "aws.secret.access.key": "minioadmin",
       "s3.part.size" : "5242880",
-      "s3.compression.type" : "gzip",
 
-      "format.class" : "io.confluent.connect.s3.format.json.JsonFormat",
+      "format.class": "io.confluent.connect.s3.format.avro.AvroFormat",
+      "avro.codec": "snappy",
       "storage.class" : "io.confluent.connect.s3.storage.S3Storage",
       "partitioner.class": "io.confluent.connect.storage.partitioner.DailyPartitioner",
       "path.format": "'year'=YYYY/'month'=MM/'day'=dd",

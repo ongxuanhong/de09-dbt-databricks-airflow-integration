@@ -1,2 +1,3 @@
 dlt[duckdb,filesystem,deltalake]>=1.23.0
 dlt[workspace]
+fastavro[snappy]>=1.12.1
