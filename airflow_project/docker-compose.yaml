@@ -17,6 +17,26 @@ x-airflow-common:
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
     PYTHONPATH: '/opt/airflow/dags:/opt/airflow/plugins:${PYTHONPATH}'
+    
+    # dlt: mirrors dags/data_ingestion/.dlt/secrets.toml [sources|destination].filesystem.credentials
+    # Override via .env (e.g. DLT_AWS_ACCESS_KEY_ID). Endpoint defaults to host.docker.internal so
+    # workers reach MinIO/S3 on the machine running Docker; use http://localhost:9000 only for host-side runs.
+    SOURCES__FILESYSTEM__CREDENTIALS__AWS_ACCESS_KEY_ID: ${DLT_AWS_ACCESS_KEY_ID:-minioadmin}
+    SOURCES__FILESYSTEM__CREDENTIALS__AWS_SECRET_ACCESS_KEY: ${DLT_AWS_SECRET_ACCESS_KEY:-minioadmin}
+    SOURCES__FILESYSTEM__CREDENTIALS__ENDPOINT_URL: ${DLT_S3_ENDPOINT_URL:-http://host.docker.internal:9000}
+    SOURCES__FILESYSTEM__CREDENTIALS__S3_URL_STYLE: ${DLT_S3_URL_STYLE:-path}
+    SOURCES__FILESYSTEM__CREDENTIALS__REGION_NAME: ${DLT_AWS_REGION:-us-west-2}
+    DESTINATION__FILESYSTEM__CREDENTIALS__AWS_ACCESS_KEY_ID: ${DLT_AWS_ACCESS_KEY_ID:-minioadmin}
+    DESTINATION__FILESYSTEM__CREDENTIALS__AWS_SECRET_ACCESS_KEY: ${DLT_AWS_SECRET_ACCESS_KEY:-minioadmin}
+    DESTINATION__FILESYSTEM__CREDENTIALS__ENDPOINT_URL: ${DLT_S3_ENDPOINT_URL:-http://host.docker.internal:9000}
+    DESTINATION__FILESYSTEM__CREDENTIALS__S3_URL_STYLE: ${DLT_S3_URL_STYLE:-path}
+    DESTINATION__FILESYSTEM__CREDENTIALS__REGION_NAME: ${DLT_AWS_REGION:-us-west-2}
+
+    # dlt: mirrors dags/data_ingestion/bronze_to_silver/.dlt/config.toml [sources|destination].filesystem
+    SOURCES__FILESYSTEM__BUCKET_URL: ${DLT_SOURCES_BUCKET_URL:-s3://bronze}
+    SOURCES__FILESYSTEM__FILE_GLOB: "${DLT_SOURCES_FILE_GLOB:-event_streaming/postgres1.inventory.customers/year=2026/month=03/*/*.json.gz}"
+    DESTINATION__FILESYSTEM__BUCKET_URL: ${DLT_DEST_BUCKET_URL:-s3://silver}
+    DESTINATION__FILESYSTEM__LAYOUT: "{table_name}/year={YYYY}/month={MM}/day={DD}/{load_id}.{file_id}.{ext}"
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs

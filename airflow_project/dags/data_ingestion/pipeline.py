@@ -1,10 +1,5 @@
 from datetime import datetime, timezone
 
-import dlt
-from dlt.sources.filesystem import filesystem as src_filesystem
-from dlt.sources.filesystem import read_jsonl
-from dlt.destinations import filesystem as des_filesystem
-
 # Column used for incremental loading and for deriving partition columns
 TIMESTAMP_COLUMN = "ts_ms"
 TABLE_NAME = "customers"
@@ -77,32 +72,41 @@ def get_incremental_last_value(pipe, resource_name: str, cursor_path: str):
     return None
 
 
-src_files = src_filesystem(incremental=dlt.sources.incremental("modification_date"))
-des_files = des_filesystem()
-reader = (
-    (src_files | read_jsonl())
-    .with_name(TABLE_NAME)
-    .add_map(_add_partition_from_timestamp)
-    .apply_hints(
-        incremental=dlt.sources.incremental(TIMESTAMP_COLUMN),
-        columns={
-            "year": {"partition": True},
-            "month": {"partition": True},
-            "day": {"partition": True},
-        },
+def run_bronze_to_silver_pipeline() -> None:
+    """Execute the bronze → silver dlt pipeline (incremental Delta write)."""
+    import dlt
+    from dlt.destinations import filesystem as des_filesystem
+    from dlt.sources.filesystem import filesystem as src_filesystem
+    from dlt.sources.filesystem import read_jsonl
+
+    src_files = src_filesystem(incremental=dlt.sources.incremental("modification_date"))
+    des_files = des_filesystem()
+    reader = (
+        (src_files | read_jsonl())
+        .with_name(TABLE_NAME)
+        .add_map(_add_partition_from_timestamp)
+        .apply_hints(
+            incremental=dlt.sources.incremental(TIMESTAMP_COLUMN),
+            columns={
+                "year": {"partition": True},
+                "month": {"partition": True},
+                "day": {"partition": True},
+            },
+        )
     )
-)
-pipeline = dlt.pipeline(
-    pipeline_name="bronze_to_silver_pipeline",
-    dataset_name="event_streaming",
-    destination=des_files,
-    progress="log",
-)
+    pipeline = dlt.pipeline(
+        pipeline_name="bronze_to_silver_pipeline",
+        dataset_name="event_streaming",
+        destination=des_files,
+        progress="log",
+    )
 
-info = pipeline.run(reader, write_disposition="append", table_format="delta")
-print(info)
+    info = pipeline.run(reader, write_disposition="append", table_format="delta")
+    print(info)
+
+    last_value = get_incremental_last_value(pipeline, TABLE_NAME, TIMESTAMP_COLUMN)
+    print(f"Incremental last_value (next run start): {last_value}")
 
 
-# Get the incremental cursor value saved for the next run (resource TABLE_NAME, cursor "timestamp")
-last_value = get_incremental_last_value(pipeline, TABLE_NAME, TIMESTAMP_COLUMN)
-print(f"Incremental last_value (next run start): {last_value}")
+if __name__ == "__main__":
+    run_bronze_to_silver_pipeline()

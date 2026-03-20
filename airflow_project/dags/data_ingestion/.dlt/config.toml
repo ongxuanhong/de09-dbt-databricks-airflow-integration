@@ -10,3 +10,9 @@ file_glob = "event_streaming/postgres1.inventory.customers/year=2026/month=03/*/
 [destination.filesystem]
 bucket_url = "s3://silver"
 layout="{table_name}/year={YYYY}/month={MM}/day={DD}/{load_id}.{file_id}.{ext}"
+
+
+# airflow variables set SOURCES__FILESYSTEM__BUCKET_URL "s3://bronze"
+# airflow variables set SOURCES__FILESYSTEM__FILE_GLOB "event_streaming/postgres1.inventory.customers/year=2026/month=03/*/*.json.gz"
+# airflow variables set DESTINATION__FILESYSTEM__BUCKET_URL "s3://silver"
+# airflow variables set DESTINATION__FILESYSTEM__LAYOUT "{table_name}/year={YYYY}/month={MM}/day={DD}/{load_id}.{file_id}.{ext}"
