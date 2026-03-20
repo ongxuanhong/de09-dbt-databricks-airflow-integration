@@ -77,12 +77,12 @@ def run_bronze_to_silver_pipeline() -> None:
     import dlt
     from dlt.destinations import filesystem as des_filesystem
     from dlt.sources.filesystem import filesystem as src_filesystem
-    from avro_reader import read_avro
+    from dlt.sources.filesystem import read_jsonl
 
     src_files = src_filesystem(incremental=dlt.sources.incremental("modification_date"))
     des_files = des_filesystem()
     reader = (
-        (src_files | read_avro())
+        (src_files | read_jsonl())
         .with_name(TABLE_NAME)
         .add_map(_add_partition_from_timestamp)
         .apply_hints(
