@@ -272,6 +272,52 @@ curl -i -X POST \
     }
   }'
 
+
+curl -i -X POST \
+  -H "Accept: application/json" \
+  -H "Content-Type: application/json" \
+  http://localhost:8083/connectors \
+  -d '{
+    "name": "s3-sink-connector",
+    "config": {
+      "connector.class": "io.confluent.connect.s3.S3SinkConnector",
+      "tasks.max": "1",
+      "topics.regex": "postgres1\\..*",
+
+      "store.url": "http://minio:9000",
+      "s3.region": "us-west-2",
+      "s3.bucket.name": "bronze",
+      "aws.access.key.id": "minioadmin",
+      "aws.secret.access.key": "minioadmin",
+      "s3.part.size" : "5242880",
+      "s3.compression.type" : "gzip",
+
+      "format.class" : "io.confluent.connect.s3.format.json.JsonFormat",
+      "storage.class" : "io.confluent.connect.s3.storage.S3Storage",
+      "partitioner.class": "io.confluent.connect.storage.partitioner.DailyPartitioner",
+      "path.format": "'year'=YYYY/'month'=MM/'day'=dd",
+      "partition.duration.ms" : "3600000",
+      "timestamp.extractor" : "Record",
+      "locale" : "en-US",
+      "timezone" : "UTC",
+      "flush.size" : "1",
+      "rotate.interval.ms" : "300000",
+      "rotate.schedule.interval.ms" : "3600000",
+      "topics.dir" : "event_streaming",
+      "schema.generator.class" : "io.confluent.connect.storage.hive.schema.DefaultSchemaGenerator",
+      "schema.compatibility" : "BACKWARD",
+      "max.retries" : "10",
+      "retry.backoff.ms" : "5000",
+      "errors.tolerance" : "none",
+      "errors.log.enable" : "true",
+      "errors.log.include.messages" : "true",
+      "key.converter" : "org.apache.kafka.connect.storage.StringConverter",
+      "key.converter.schemas.enable" : "false",
+      "value.converter" : "org.apache.kafka.connect.json.JsonConverter",
+      "value.converter.schemas.enable" : "false"
+    }
+  }'  
+
 # delete
 curl -X DELETE http://localhost:8083/connectors/s3-sink-connector  
 docker compose exec kafka kafka-consumer-groups --bootstrap-server kafka:9092 --list | grep connect

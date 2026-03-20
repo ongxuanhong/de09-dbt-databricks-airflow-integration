@@ -33,3 +33,7 @@ dbt-core==1.11.7
 dbt-databricks==1.10.9
 astronomer-cosmos
 apache-airflow-providers-databricks
+
+# dlt (Data Load Tool)
+dlt[duckdb,filesystem,deltalake]>=1.23.0
+dlt[workspace]
