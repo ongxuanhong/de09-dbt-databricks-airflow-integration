@@ -79,6 +79,9 @@ def run_bronze_to_silver_pipeline() -> None:
     from dlt.sources.filesystem import filesystem as src_filesystem
     from dlt.sources.filesystem import read_jsonl
 
+    current_pipeline = dlt.current.pipeline()
+    print("Current pipeline:", current_pipeline)
+
     src_files = src_filesystem(incremental=dlt.sources.incremental("modification_date"))
     des_files = des_filesystem()
     reader = (

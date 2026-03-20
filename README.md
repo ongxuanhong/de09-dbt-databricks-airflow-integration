@@ -246,6 +246,7 @@ curl -i -X POST \
       "store.url": "http://minio:9000",
       "s3.region": "us-west-2",
       "s3.bucket.name": "bronze",
+      "s3.compression.type": "gzip",
       "aws.access.key.id": "minioadmin",
       "aws.secret.access.key": "minioadmin",
 
@@ -272,7 +273,7 @@ curl -i -X POST \
     }
   }'
 
-
+# JSON topic to Avro file in S3  
 curl -i -X POST \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
